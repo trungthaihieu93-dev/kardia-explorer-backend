@@ -16,12 +16,14 @@
  *  along with the go-kardia library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package api
+package e
 
 import (
 	"net/http"
+	"os"
 	"strconv"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/labstack/echo"
 
 	"github.com/kardiachain/kardia-explorer-backend/types"
@@ -37,6 +39,22 @@ func checkPagination() echo.MiddlewareFunc {
 			if limit > types.MaximumLimit {
 				return echo.NewHTTPError(http.StatusBadRequest, "")
 			}
+			return next(c)
+		}
+	}
+}
+
+func ValidatePrivateRequest() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if c.Request().Header.Get("Authorization") != os.Getenv("HTTP_REQUEST_SECRET") {
+				event := sentry.NewEvent()
+				event.Level = sentry.LevelWarning
+				event.Message = "Authorization error to private APIs"
+				sentry.CaptureEvent(event)
+				return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized request")
+			}
+
 			return next(c)
 		}
 	}

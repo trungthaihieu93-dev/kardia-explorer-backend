@@ -15,16 +15,66 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with the go-kardia library. If not, see <http://www.gnu.org/licenses/>.
  */
-// Package api
-package api
+// Package e
+package e
 
 import (
 	"net/http"
 
 	"github.com/labstack/echo"
+
+	"github.com/kardiachain/kardia-explorer-backend/api/dto"
 )
 
-//todo: Improve response structure
+type EchoR struct {
+	c          echo.Context
+	StatusCode int             `json:"-"`
+	Code       int64           `json:"code"`
+	Msg        string          `json:"msg"`
+	Pagination *dto.Pagination `json:"pagination,omitempty"`
+	Data       interface{}     `json:"data,omitempty"`
+}
+
+func Response(c echo.Context) EchoR {
+	return EchoR{c: c}
+}
+
+func (r EchoR) Unauthorized() error {
+	r.Code = 401
+	r.Msg = "Unauthorized"
+	return r.c.JSON(http.StatusUnauthorized, r)
+}
+
+func (r EchoR) BadRequest() error {
+	r.Code = 400
+	r.Msg = "Bad Request"
+	return r.c.JSON(http.StatusBadRequest, r)
+}
+
+func (r EchoR) NotFound() error {
+	r.Code = 401
+	r.Msg = "Not Found"
+	return r.c.JSON(http.StatusNotFound, r)
+}
+
+func (r EchoR) Err(err error) error {
+	r.Code = 400
+	r.Msg = err.Error()
+	return r.c.JSON(http.StatusBadRequest, r)
+}
+
+func (r EchoR) OK(data interface{}) error {
+	r.Code = 200
+	r.Msg = "Success"
+	r.Data = data
+	return r.c.JSON(http.StatusOK, r)
+}
+
+func (r EchoR) OKWithPagination(pagination dto.Pagination, data interface{}) error {
+	r.Pagination = &pagination
+	return r.OK(data)
+}
+
 var (
 	OK             = EchoResponse{StatusCode: http.StatusOK, Code: 1000, Msg: "Success"}
 	InternalServer = EchoResponse{StatusCode: http.StatusInternalServerError, Code: 1100, Msg: "Server busy..."}
