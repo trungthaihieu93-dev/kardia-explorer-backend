@@ -36,8 +36,8 @@ func main() {
 			waitExit <- true
 		}
 	}()
-	go runBlockSubscriber(ctx, envCfg)
-	go runTransactionsSubscriber(ctx, envCfg)
+	//go runBlockSubscriber(ctx, envCfg)
+	//go runTransactionsSubscriber(ctx, envCfg)
 	go runStakingSubscriber(ctx, envCfg)
 
 	<-waitExit
