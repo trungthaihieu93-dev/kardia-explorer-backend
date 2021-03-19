@@ -151,6 +151,7 @@ github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeME
 github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3/go.mod h1:VJ0WA2NBN22VlZ2dKZQPAPnyWw5XTlK1KymzLKsr59s=
 github.com/gin-gonic/gin v1.4.0/go.mod h1:OW2EZn3DO8Ln9oIKOvM++LBO+5UPHJJDH72/q/3rZdM=
 github.com/go-check/check v0.0.0-20180628173108-788fd7840127/go.mod h1:9ES+weclKsC9YodN5RgxqK/VD9HM9JsCSh7rNhMZE98=
+github.com/go-errors/errors v1.0.1 h1:LUHzmkK3GUKUrL/1gfBUxAHzcev3apQlezX/+O7ma6w=
 github.com/go-errors/errors v1.0.1/go.mod h1:f4zRHt4oKfwPJE5k8C9vpYG+aDHdBFUsgrm6/TyX73Q=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
@@ -309,10 +310,6 @@ github.com/julienschmidt/httprouter v1.1.1-0.20170430222011-975b5c4c7c21/go.mod 
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=
 github.com/karalabe/usb v0.0.0-20190919080040-51dc0efba356/go.mod h1:Od972xHfMJowv7NGVDiWVxk2zxnWgjLlJzE+F4F7AGU=
-github.com/kardiachain/go-kaiclient v0.0.0-20210312084202-0c2eaa6a4212 h1:DnsInhA01kyBsCkoxVwZVPbAB+4Dj02SjmCu82qsPkc=
-github.com/kardiachain/go-kaiclient v0.0.0-20210312084202-0c2eaa6a4212/go.mod h1:3zvgL/+YwUwp65R69O3FaM4YpaQ5A2LP1A1xRpUA2pw=
-github.com/kardiachain/go-kaiclient v0.0.0-20210317111913-9c451424a257 h1:s6gdoxTN1xbxexUld/jJILeUr8ONSDDUELZiopYKBSc=
-github.com/kardiachain/go-kaiclient v0.0.0-20210317111913-9c451424a257/go.mod h1:3zvgL/+YwUwp65R69O3FaM4YpaQ5A2LP1A1xRpUA2pw=
 github.com/kardiachain/go-kaiclient v0.0.0-20210317114326-32548175c496 h1:tT3483iMN+cuIF+RHZyxq6f0jGxnp5LA3AXHmedf5Gg=
 github.com/kardiachain/go-kaiclient v0.0.0-20210317114326-32548175c496/go.mod h1:3zvgL/+YwUwp65R69O3FaM4YpaQ5A2LP1A1xRpUA2pw=
 github.com/kardiachain/go-kardia v0.11.0 h1:8rD5tYjkGjTBRWVzu6c9DkLwFWhVTxDhgfIbmvslPeU=
@@ -452,6 +449,7 @@ github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 h1:q2e307iGHPdTGp
 github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5/go.mod h1:jvVRKCrJTQWu0XVbaOlby/2lO20uSCHEMzzplHXte1o=
 github.com/pierrec/lz4 v1.0.2-0.20190131084431-473cd7ce01a1/go.mod h1:3/3N9NVKO0jef7pBehbT1qWhCMrIgbYNnFAZCqQ5LRc=
 github.com/pierrec/lz4 v2.0.5+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi+IEE17M5jbnwPHcY=
+github.com/pingcap/errors v0.11.4 h1:lFuQV/oaUMGcD2tqt+01ROSmJs75VG1ToEOkZIZ4nE4=
 github.com/pingcap/errors v0.11.4/go.mod h1:Oi8TUi2kEtXXLMJk9l1cGmz20kV3TaQ0usTwv5KuLY8=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
