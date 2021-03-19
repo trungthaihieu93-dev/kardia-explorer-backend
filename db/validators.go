@@ -31,8 +31,9 @@ type IValidator interface {
 }
 
 type ValidatorsFilter struct {
-	Role int // [1:candidates, 2:validators, 3:proposer]
-	Skip int
+	Role  int // [1:candidates, 2:validators, 3:proposer]
+	Skip  int64
+	Limit int64
 }
 
 func (m *mongoDB) UpsertValidators(ctx context.Context, validators []*types.Validator) error {
