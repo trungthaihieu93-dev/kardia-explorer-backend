@@ -18,7 +18,7 @@ import (
 
 	"github.com/kardiachain/go-kardia/lib/common"
 
-	"github.com/kardiachain/kardia-explorer-backend/api"
+	"github.com/kardiachain/kardia-explorer-backend/api/e"
 	"github.com/kardiachain/kardia-explorer-backend/cfg"
 	"github.com/kardiachain/kardia-explorer-backend/db"
 	"github.com/kardiachain/kardia-explorer-backend/types"
@@ -29,7 +29,7 @@ func (s *Server) Ping(c echo.Context) error {
 		Version string `json:"version"`
 	}
 	stats := &pingStat{Version: cfg.ServerVersion}
-	return api.OK.SetData(stats).Build(c)
+	return e.OK.SetData(stats).Build(c)
 }
 
 func (s *Server) Stats(c echo.Context) error {
@@ -40,7 +40,7 @@ func (s *Server) Stats(c echo.Context) error {
 		Limit: 11,
 	})
 	if err != nil {
-		return api.InternalServer.Build(c)
+		return e.InternalServer.Build(c)
 	}
 
 	type Stat struct {
@@ -57,7 +57,7 @@ func (s *Server) Stats(c echo.Context) error {
 		stats = append(stats, stat)
 	}
 
-	return api.OK.SetData(struct {
+	return e.OK.SetData(struct {
 		Data interface{} `json:"data"`
 	}{
 		Data: stats,
@@ -67,7 +67,7 @@ func (s *Server) Stats(c echo.Context) error {
 func (s *Server) TotalHolders(c echo.Context) error {
 	ctx := context.Background()
 	totalHolders, totalContracts := s.cacheClient.TotalHolders(ctx)
-	return api.OK.SetData(struct {
+	return e.OK.SetData(struct {
 		TotalHolders   uint64 `json:"totalHolders"`
 		TotalContracts uint64 `json:"totalContracts"`
 	}{
@@ -81,7 +81,7 @@ func (s *Server) Nodes(c echo.Context) error {
 	nodes, err := s.kaiClient.NodesInfo(ctx)
 	if err != nil {
 		s.logger.Warn("cannot get nodes info from RPC", zap.Error(err))
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	var result []*NodeInfo
 	for _, node := range nodes {
@@ -95,7 +95,7 @@ func (s *Server) Nodes(c echo.Context) error {
 	if err != nil {
 		// If cannot read nodes from db
 		// then return network nodes only
-		return api.OK.SetData(result).Build(c)
+		return e.OK.SetData(result).Build(c)
 	}
 
 	for _, n := range customNodes {
@@ -106,7 +106,7 @@ func (s *Server) Nodes(c echo.Context) error {
 		})
 	}
 
-	return api.OK.SetData(result).Build(c)
+	return e.OK.SetData(result).Build(c)
 }
 
 func (s *Server) TokenInfo(c echo.Context) error {
@@ -116,44 +116,44 @@ func (s *Server) TokenInfo(c echo.Context) error {
 		if err != nil {
 			tokenInfo, err = s.infoServer.TokenInfo(ctx)
 			if err != nil {
-				return api.Invalid.Build(c)
+				return e.Invalid.Build(c)
 			}
 		}
 		cirSup, err := s.kaiClient.GetCirculatingSupply(ctx)
 		if err != nil {
-			return api.Invalid.Build(c)
+			return e.Invalid.Build(c)
 		}
 		cirSup = new(big.Int).Div(cirSup, new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 		tokenInfo.MainnetCirculatingSupply = cirSup.Int64() - 4500000000
-		return api.OK.SetData(tokenInfo).Build(c)
+		return e.OK.SetData(tokenInfo).Build(c)
 	}
 
 	tokenInfo, err := s.infoServer.TokenInfo(ctx)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	cirSup, err := s.kaiClient.GetCirculatingSupply(ctx)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	cirSup = new(big.Int).Div(cirSup, new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 	tokenInfo.MainnetCirculatingSupply = cirSup.Int64() - 4500000000
-	return api.OK.SetData(tokenInfo).Build(c)
+	return e.OK.SetData(tokenInfo).Build(c)
 }
 
 func (s *Server) UpdateSupplyAmounts(c echo.Context) error {
 	ctx := context.Background()
 	if c.Request().Header.Get("Authorization") != s.infoServer.HttpRequestSecret {
-		return api.Unauthorized.Build(c)
+		return e.Unauthorized.Build(c)
 	}
 	var supplyInfo *types.SupplyInfo
 	if err := c.Bind(&supplyInfo); err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	if err := s.cacheClient.UpdateSupplyAmounts(ctx, supplyInfo); err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
-	return api.OK.Build(c)
+	return e.OK.Build(c)
 }
 
 func (s *Server) GetProposalsList(c echo.Context) error {
@@ -161,12 +161,12 @@ func (s *Server) GetProposalsList(c echo.Context) error {
 	pagination, page, limit := getPagingOption(c)
 	dbResult, dbTotal, dbErr := s.dbClient.GetListProposals(ctx, pagination)
 	if dbErr != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	rpcResult, rpcTotal, rpcErr := s.kaiClient.GetProposals(ctx, pagination)
 	if rpcErr != nil {
 		fmt.Println("GetProposals err: ", rpcErr)
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	if dbTotal != rpcTotal { // try to find out and insert missing proposals to db
 		isFound := false
@@ -189,7 +189,7 @@ func (s *Server) GetProposalsList(c echo.Context) error {
 			}
 		}
 	}
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Data:  dbResult,
@@ -201,31 +201,31 @@ func (s *Server) GetProposalDetails(c echo.Context) error {
 	ctx := context.Background()
 	proposalID, ok := new(big.Int).SetString(c.Param("id"), 10)
 	if !ok {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	result, err := s.dbClient.ProposalInfo(ctx, proposalID.Uint64())
 	if err == nil {
-		return api.OK.SetData(result).Build(c)
+		return e.OK.SetData(result).Build(c)
 	}
 	result, err = s.kaiClient.GetProposalDetails(ctx, proposalID)
 	if err != nil {
 		fmt.Println("GetProposalDetails err: ", err)
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
-	return api.OK.SetData(result).Build(c)
+	return e.OK.SetData(result).Build(c)
 }
 
 func (s *Server) GetParams(c echo.Context) error {
 	ctx := context.Background()
 	params, err := s.kaiClient.GetParams(ctx)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	result := make(map[string]interface{})
 	for _, param := range params {
 		result[param.LabelName] = param.FromValue
 	}
-	return api.OK.SetData(result).Build(c)
+	return e.OK.SetData(result).Build(c)
 }
 
 func (s *Server) Blocks(c echo.Context) error {
@@ -241,7 +241,7 @@ func (s *Server) Blocks(c echo.Context) error {
 		blocks, err = s.dbClient.Blocks(ctx, pagination)
 		if err != nil {
 			s.logger.Info("Cannot get latest blocks from db", zap.Error(err))
-			return api.InternalServer.Build(c)
+			return e.InternalServer.Build(c)
 		}
 	}
 
@@ -278,7 +278,7 @@ func (s *Server) Blocks(c echo.Context) error {
 		result = append(result, b)
 	}
 	total := s.cacheClient.LatestBlockHeight(ctx)
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Data:  result,
@@ -305,14 +305,14 @@ func (s *Server) Block(c echo.Context) error {
 				block, err = s.kaiClient.BlockByHash(ctx, blockHashOrHeightStr)
 				if err != nil {
 					s.logger.Warn("got block by hash from RPC error", zap.Any("block", block), zap.Error(err))
-					return api.Invalid.Build(c)
+					return e.Invalid.Build(c)
 				}
 			}
 		}
 	} else {
 		blockHeight, err := strconv.ParseUint(blockHashOrHeightStr, 10, 64)
 		if err != nil || blockHeight <= 0 {
-			return api.Invalid.Build(c)
+			return e.Invalid.Build(c)
 		}
 		// get block in cache if exist
 		block, err = s.cacheClient.BlockByHeight(ctx, blockHeight)
@@ -325,7 +325,7 @@ func (s *Server) Block(c echo.Context) error {
 				block, err = s.kaiClient.BlockByHeight(ctx, blockHeight)
 				if err != nil {
 					s.logger.Warn("got block by height from RPC error", zap.Uint64("blockHeight", blockHeight), zap.Error(err))
-					return api.Invalid.Build(c)
+					return e.Invalid.Build(c)
 				}
 			}
 		}
@@ -353,16 +353,16 @@ func (s *Server) Block(c echo.Context) error {
 		Block:        *block,
 		ProposerName: proposerName,
 	}
-	return api.OK.SetData(result).Build(c)
+	return e.OK.SetData(result).Build(c)
 }
 
 func (s *Server) PersistentErrorBlocks(c echo.Context) error {
 	ctx := context.Background()
 	heights, err := s.cacheClient.PersistentErrorBlockHeights(ctx)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
-	return api.OK.SetData(heights).Build(c)
+	return e.OK.SetData(heights).Build(c)
 }
 
 func (s *Server) BlockTxs(c echo.Context) error {
@@ -388,7 +388,7 @@ func (s *Server) BlockTxs(c echo.Context) error {
 				blockRPC, err := s.kaiClient.BlockByHash(ctx, block)
 				if err != nil {
 					s.logger.Warn("cannot get block txs by hash from RPC", zap.String("blockHash", block), zap.Error(err))
-					return api.InternalServer.Build(c)
+					return e.InternalServer.Build(c)
 				}
 				txs = blockRPC.Txs
 				if pagination.Skip > len(txs) {
@@ -404,7 +404,7 @@ func (s *Server) BlockTxs(c echo.Context) error {
 	} else {
 		height, err := strconv.ParseUint(block, 10, 64)
 		if err != nil || height <= 0 {
-			return api.Invalid.Build(c)
+			return e.Invalid.Build(c)
 		}
 		// get block txs in block if exist
 		txs, total, err = s.cacheClient.TxsByBlockHeight(ctx, height, pagination)
@@ -417,7 +417,7 @@ func (s *Server) BlockTxs(c echo.Context) error {
 				blockRPC, err := s.kaiClient.BlockByHeight(ctx, height)
 				if err != nil {
 					s.logger.Warn("cannot get block txs by height from RPC", zap.String("blockHeight", block), zap.Error(err))
-					return api.InternalServer.Build(c)
+					return e.InternalServer.Build(c)
 				}
 				txs = blockRPC.Txs
 				if pagination.Skip > len(txs) {
@@ -463,7 +463,7 @@ func (s *Server) BlockTxs(c echo.Context) error {
 		result = append(result, t)
 	}
 
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Total: total,
@@ -476,7 +476,7 @@ func (s *Server) BlocksByProposer(c echo.Context) error {
 	pagination, page, limit := getPagingOption(c)
 	blocks, total, err := s.dbClient.BlocksByProposer(ctx, c.Param("address"), pagination)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 
 	smcAddress := map[string]*valInfoResponse{}
@@ -516,7 +516,7 @@ func (s *Server) BlocksByProposer(c echo.Context) error {
 
 		result = append(result, b)
 	}
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Total: total,
@@ -536,7 +536,7 @@ func (s *Server) Txs(c echo.Context) error {
 	if err != nil || txs == nil || len(txs) < limit {
 		txs, err = s.dbClient.LatestTxs(ctx, pagination)
 		if err != nil {
-			return api.Invalid.Build(c)
+			return e.Invalid.Build(c)
 		}
 	}
 
@@ -572,7 +572,7 @@ func (s *Server) Txs(c echo.Context) error {
 		result = append(result, t)
 	}
 
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Total: s.cacheClient.TotalTxs(ctx),
@@ -590,7 +590,7 @@ func (s *Server) Addresses(c echo.Context) error {
 	}
 	addrs, err := s.dbClient.GetListAddresses(ctx, sortDirection, pagination)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	totalHolders, totalContracts := s.cacheClient.TotalHolders(ctx)
 	smcAddress := s.getValidatorsAddressAndRole(ctx)
@@ -622,7 +622,7 @@ func (s *Server) Addresses(c echo.Context) error {
 		}
 		result = append(result, addrInfo)
 	}
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Total: totalHolders + totalContracts,
@@ -659,13 +659,13 @@ func (s *Server) AddressInfo(c echo.Context) error {
 			addrInfo.BalanceString = balance
 			_ = s.dbClient.UpdateAddresses(ctx, []*types.Address{addrInfo})
 		}
-		return api.OK.SetData(result).Build(c)
+		return e.OK.SetData(result).Build(c)
 	}
 	s.logger.Warn("address not found in db, getting from RPC instead...", zap.Error(err))
 	// try to get balance and code at this address to determine whether we should write this address info to database or not
 	newAddr, err := s.newAddressInfo(ctx, address)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	result := &SimpleAddress{
 		Address:       newAddr.Address,
@@ -677,7 +677,7 @@ func (s *Server) AddressInfo(c echo.Context) error {
 		result.Role = smcAddress[result.Address].Role
 		result.Name = smcAddress[result.Address].Name
 	}
-	return api.OK.SetData(result).Build(c)
+	return e.OK.SetData(result).Build(c)
 }
 
 func (s *Server) newAddressInfo(ctx context.Context, address string) (*types.Address, error) {
@@ -753,7 +753,7 @@ func (s *Server) AddressTxs(c echo.Context) error {
 		result = append(result, t)
 	}
 
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Total: total,
@@ -787,7 +787,7 @@ func (s *Server) AddressHolders(c echo.Context) error {
 			holders[i].Logo = krcTokenInfo.Logo
 		}
 	}
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Total: total,
@@ -799,7 +799,7 @@ func (s *Server) TxByHash(c echo.Context) error {
 	ctx := context.Background()
 	txHash := c.Param("txHash")
 	if txHash == "" {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 
 	var tx *types.Transaction
@@ -810,7 +810,7 @@ func (s *Server) TxByHash(c echo.Context) error {
 		tx, err = s.kaiClient.GetTransaction(ctx, txHash)
 		if err != nil {
 			s.Logger.Warn("cannot get tx by hash from RPC:", zap.String("txHash", txHash))
-			return api.Invalid.Build(c)
+			return e.Invalid.Build(c)
 		}
 		receipt, err := s.kaiClient.GetTransactionReceipt(ctx, txHash)
 		if err != nil {
@@ -902,10 +902,10 @@ func (s *Server) TxByHash(c echo.Context) error {
 	if smcAddress[result.To] != nil {
 		result.Role = smcAddress[result.To].Role
 		result.IsInValidatorsList = true
-		return api.OK.SetData(result).Build(c)
+		return e.OK.SetData(result).Build(c)
 	}
 
-	return api.OK.SetData(result).Build(c)
+	return e.OK.SetData(result).Build(c)
 }
 
 //getValidators
@@ -1043,50 +1043,50 @@ func (s *Server) getValidatorsAddressAndRole(ctx context.Context) map[string]*va
 func (s *Server) UpsertNetworkNodes(c echo.Context) error {
 	//ctx := context.Background()
 	if c.Request().Header.Get("Authorization") != s.infoServer.HttpRequestSecret {
-		return api.Unauthorized.Build(c)
+		return e.Unauthorized.Build(c)
 	}
 	var nodeInfo *types.NodeInfo
 	if err := c.Bind(&nodeInfo); err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	if nodeInfo.ID == "" || nodeInfo.Moniker == "" {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	ctx := context.Background()
 	if err := s.dbClient.UpsertNode(ctx, nodeInfo); err != nil {
-		return api.InternalServer.Build(c)
+		return e.InternalServer.Build(c)
 	}
 
-	return api.OK.Build(c)
+	return e.OK.Build(c)
 }
 
 func (s *Server) RemoveNetworkNodes(c echo.Context) error {
 	//ctx := context.Background()
 	if c.Request().Header.Get("Authorization") != s.infoServer.HttpRequestSecret {
-		return api.Unauthorized.Build(c)
+		return e.Unauthorized.Build(c)
 	}
 	nodesID := c.Param("nodeID")
 	if nodesID == "" {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 
 	ctx := context.Background()
 	if err := s.dbClient.RemoveNode(ctx, nodesID); err != nil {
-		return api.InternalServer.Build(c)
+		return e.InternalServer.Build(c)
 	}
 
-	return api.OK.Build(c)
+	return e.OK.Build(c)
 }
 
 func (s *Server) ReloadAddressesBalance(c echo.Context) error {
 	ctx := context.Background()
 	if c.Request().Header.Get("Authorization") != s.infoServer.HttpRequestSecret {
-		return api.Unauthorized.Build(c)
+		return e.Unauthorized.Build(c)
 	}
 
 	addresses, err := s.dbClient.Addresses(ctx)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 
 	for id, a := range addresses {
@@ -1098,53 +1098,53 @@ func (s *Server) ReloadAddressesBalance(c echo.Context) error {
 	}
 
 	if err := s.dbClient.UpdateAddresses(ctx, addresses); err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 
-	return api.OK.Build(c)
+	return e.OK.Build(c)
 }
 
 func (s *Server) UpdateAddressName(c echo.Context) error {
 	ctx := context.Background()
 	if c.Request().Header.Get("Authorization") != s.infoServer.HttpRequestSecret {
-		return api.Unauthorized.Build(c)
+		return e.Unauthorized.Build(c)
 	}
 	var addressName types.UpdateAddress
 	if err := c.Bind(&addressName); err != nil {
 		fmt.Println("cannot bind ", err)
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	addressInfo, err := s.dbClient.AddressByHash(ctx, addressName.Address)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 
 	addressInfo.Name = addressName.Name
 
 	if err := s.dbClient.UpdateAddresses(ctx, []*types.Address{addressInfo}); err != nil {
 		fmt.Println("cannot update ", err)
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	_ = s.cacheClient.UpdateAddressInfo(ctx, addressInfo)
-	return api.OK.Build(c)
+	return e.OK.Build(c)
 }
 
 func (s *Server) ReloadValidators(c echo.Context) error {
 	if c.Request().Header.Get("Authorization") != s.infoServer.HttpRequestSecret {
-		return api.Unauthorized.Build(c)
+		return e.Unauthorized.Build(c)
 	}
 
 	//todo longnd: rework reload validator API
 	//validators, err := s.kaiClient.Validators(ctx)
 	//if err != nil {
-	//	return api.Invalid.Build(c)
+	//	return e.Invalid.Build(c)
 	//}
 	//
 	//if err := s.dbClient.UpsertValidators(ctx, validators); err != nil {
-	//	return api.Invalid.Build(c)
+	//	return e.Invalid.Build(c)
 	//}
 
-	return api.OK.Build(c)
+	return e.OK.Build(c)
 }
 
 func (s *Server) ContractEvents(c echo.Context) error {
@@ -1176,7 +1176,7 @@ func (s *Server) ContractEvents(c echo.Context) error {
 			KRCTokenInfo: krcTokenInfo,
 		}
 	}
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Total: total,
@@ -1193,7 +1193,7 @@ func (s *Server) Contracts(c echo.Context) error {
 	}
 	result, total, err := s.dbClient.Contracts(ctx, filterCrit)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	finalResult := make([]*SimpleKRCTokenInfo, len(result))
 	for i := range result {
@@ -1212,7 +1212,7 @@ func (s *Server) Contracts(c echo.Context) error {
 		finalResult[i].TotalSupply = tokenInfo.TotalSupply
 		finalResult[i].Decimal = tokenInfo.Decimals
 	}
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Total: total,
@@ -1224,7 +1224,7 @@ func (s *Server) Contract(c echo.Context) error {
 	ctx := context.Background()
 	smc, addrInfo, err := s.dbClient.Contract(ctx, c.Param("contractAddress"))
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	if smc.ABI == "" && smc.Type != "" {
 		abiStr, err := s.cacheClient.SMCAbi(ctx, cfg.SMCTypePrefix+smc.Type)
@@ -1236,29 +1236,29 @@ func (s *Server) Contract(c echo.Context) error {
 	// map smc info to result
 	smcJSON, err := json.Marshal(smc)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	err = json.Unmarshal(smcJSON, &result)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	// map address info to result
 	addrInfoJSON, err := json.Marshal(addrInfo)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	err = json.Unmarshal(addrInfoJSON, &result)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
-	return api.OK.SetData(result).Build(c)
+	return e.OK.SetData(result).Build(c)
 }
 
 func (s *Server) InsertContract(c echo.Context) error {
 	lgr := s.logger.With(zap.String("method", "InsertContract"))
 
 	if c.Request().Header.Get("Authorization") != s.infoServer.HttpRequestSecret {
-		return api.Unauthorized.Build(c)
+		return e.Unauthorized.Build(c)
 	}
 
 	lgr.Debug("Start insert contract")
@@ -1270,18 +1270,18 @@ func (s *Server) InsertContract(c echo.Context) error {
 	c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 	if err := c.Bind(&contract); err != nil {
 		lgr.Error("cannot bind data", zap.Error(err))
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 	if err := c.Bind(&addrInfo); err != nil {
 		lgr.Error("cannot bind data", zap.Error(err))
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	ctx := context.Background()
 	krcTokenInfoFromRPC, err := s.getKRCTokenInfoFromRPC(ctx, addrInfo.Address, addrInfo.KrcTypes)
 	if err != nil && strings.HasPrefix(addrInfo.KrcTypes, "KRC") {
 		s.logger.Warn("Updating contract is not KRC type", zap.Any("smcInfo", addrInfo))
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	if krcTokenInfoFromRPC != nil {
 		// cache new token info
@@ -1296,7 +1296,7 @@ func (s *Server) InsertContract(c echo.Context) error {
 	currTokenInfo, _ := s.dbClient.AddressByHash(ctx, addrInfo.Address)
 	if err := s.dbClient.InsertContract(ctx, &contract, &addrInfo); err != nil {
 		lgr.Error("cannot bind insert", zap.Error(err))
-		return api.InternalServer.Build(c)
+		return e.InternalServer.Build(c)
 	}
 	// retrieve old token transfer before we add this token to database as KRC
 	if (currTokenInfo != nil && currTokenInfo.KrcTypes == "" && currTokenInfo.TokenName == "" && currTokenInfo.TokenSymbol == "") || currTokenInfo == nil {
@@ -1305,14 +1305,14 @@ func (s *Server) InsertContract(c echo.Context) error {
 		}
 	}
 
-	return api.OK.Build(c)
+	return e.OK.Build(c)
 }
 
 func (s *Server) UpdateContract(c echo.Context) error {
 	lgr := s.logger.With(zap.String("method", "UpdateContract"))
 
 	if c.Request().Header.Get("Authorization") != s.infoServer.HttpRequestSecret {
-		return api.Unauthorized.Build(c)
+		return e.Unauthorized.Build(c)
 	}
 
 	lgr.Debug("Start insert contract")
@@ -1324,18 +1324,18 @@ func (s *Server) UpdateContract(c echo.Context) error {
 	c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 	if err := c.Bind(&contract); err != nil {
 		lgr.Error("cannot bind contract data", zap.Error(err))
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 	if err := c.Bind(&addrInfo); err != nil {
 		lgr.Error("cannot bind address data", zap.Error(err))
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	ctx := context.Background()
 	krcTokenInfoFromRPC, err := s.getKRCTokenInfoFromRPC(ctx, addrInfo.Address, addrInfo.KrcTypes)
 	if err != nil && strings.HasPrefix(addrInfo.KrcTypes, "KRC") {
 		s.logger.Warn("Updating contract is not KRC type", zap.Any("smcInfo", addrInfo), zap.Error(err))
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	if krcTokenInfoFromRPC != nil {
 		// cache new token info
@@ -1350,7 +1350,7 @@ func (s *Server) UpdateContract(c echo.Context) error {
 	currTokenInfo, _ := s.dbClient.AddressByHash(ctx, addrInfo.Address)
 	if err := s.dbClient.UpdateContract(ctx, &contract, &addrInfo); err != nil {
 		lgr.Error("cannot bind insert", zap.Error(err))
-		return api.InternalServer.Build(c)
+		return e.InternalServer.Build(c)
 	}
 	// retrieve old token transfer before we add this token to database as KRC
 	if (currTokenInfo != nil && currTokenInfo.KrcTypes == "" && currTokenInfo.TokenName == "" && currTokenInfo.TokenSymbol == "") || currTokenInfo == nil {
@@ -1359,23 +1359,23 @@ func (s *Server) UpdateContract(c echo.Context) error {
 		}
 	}
 
-	return api.OK.SetData(addrInfo).Build(c)
+	return e.OK.SetData(addrInfo).Build(c)
 }
 
 func (s *Server) UpdateSMCABIByType(c echo.Context) error {
 	if c.Request().Header.Get("Authorization") != s.infoServer.HttpRequestSecret {
-		return api.Unauthorized.Build(c)
+		return e.Unauthorized.Build(c)
 	}
 	ctx := context.Background()
 	var smcABI *types.ContractABI
 	if err := c.Bind(&smcABI); err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	err := s.dbClient.UpsertSMCABIByType(ctx, smcABI.Type, smcABI.ABI)
 	if err != nil {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
-	return api.OK.Build(c)
+	return e.OK.Build(c)
 }
 
 func (s *Server) SearchAddressByName(c echo.Context) error {
@@ -1385,7 +1385,7 @@ func (s *Server) SearchAddressByName(c echo.Context) error {
 		addrMap = make(map[string]*SimpleKRCTokenInfo)
 	)
 	if name == "" {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 
 	addresses, err := s.dbClient.AddressByName(ctx, name)
@@ -1426,13 +1426,13 @@ func (s *Server) SearchAddressByName(c echo.Context) error {
 	s.logger.Info("Contracts search results", zap.Any("contracts", contracts), zap.Error(err))
 
 	if len(addrMap) == 0 {
-		return api.Invalid.Build(c)
+		return e.Invalid.Build(c)
 	}
 	result := make([]*SimpleKRCTokenInfo, 0, len(addrMap))
 	for _, addr := range addrMap {
 		result = append(result, addr)
 	}
-	return api.OK.SetData(result).Build(c)
+	return e.OK.SetData(result).Build(c)
 }
 
 func (s *Server) GetHoldersListByToken(c echo.Context) error {
@@ -1466,7 +1466,7 @@ func (s *Server) GetHoldersListByToken(c echo.Context) error {
 			}
 		}
 	}
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Total: total,
@@ -1518,7 +1518,7 @@ func (s *Server) GetInternalTxs(c echo.Context) error {
 			result[i].KRCTokenInfo = krcTokenInfo
 		}
 	}
-	return api.OK.SetData(PagingResponse{
+	return e.OK.SetData(PagingResponse{
 		Page:  page,
 		Limit: limit,
 		Total: total,
