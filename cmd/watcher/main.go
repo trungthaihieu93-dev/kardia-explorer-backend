@@ -20,7 +20,7 @@ func main() {
 		panic(err.Error())
 	}
 
-	serviceCfg, err := cfg.New()
+	envCfg, err := cfg.New()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -36,8 +36,9 @@ func main() {
 			waitExit <- true
 		}
 	}()
-	//go subscribeNewBlock(ctx)
-	go runStakingSubscriber(ctx, serviceCfg)
+	go runBlockSubscriber(ctx, envCfg)
+	go runTransactionsSubscriber(ctx, envCfg)
+	go runStakingSubscriber(ctx, envCfg)
 
 	<-waitExit
 	zap.L().Info("Stopped")

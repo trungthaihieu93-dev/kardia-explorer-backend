@@ -1,0 +1,2 @@
+// Package proposal
+package proposal

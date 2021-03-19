@@ -1,0 +1,2 @@
+// Package receipt
+package receipt
