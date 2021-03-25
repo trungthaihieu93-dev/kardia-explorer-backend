@@ -36,8 +36,10 @@ func main() {
 			waitExit <- true
 		}
 	}()
-	//go subscribeNewBlock(ctx)
-	go runStakingSubscriber(ctx, serviceCfg)
+
+	go subscribeNewContract(ctx, serviceCfg)
+	//go runStakingSubscriber(ctx, serviceCfg)
+	//go runLogsSubscriber(ctx, serviceCfg)
 
 	<-waitExit
 	zap.L().Info("Stopped")
