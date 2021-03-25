@@ -637,6 +637,21 @@ func (s *Server) AddressInfo(c echo.Context) error {
 	smcAddress := s.getValidatorsAddressAndRole(ctx)
 	addrInfo, err := s.dbClient.AddressByHash(ctx, address)
 	if err == nil {
+		balance, err := s.kaiClient.GetBalance(ctx, address)
+		if err != nil {
+			s.logger.Warn("Cannot get address balance from RPC", zap.String("address", address), zap.Error(err))
+			return api.Invalid.Build(c)
+		}
+		code, err := s.kaiClient.GetCode(ctx, address)
+		if err != nil {
+			s.logger.Warn("Cannot get address code from RPC", zap.String("address", address), zap.Error(err))
+			return api.Invalid.Build(c)
+		}
+		if balance != addrInfo.BalanceString || addrInfo.IsContract != (len(code) > 0) {
+			addrInfo.BalanceString = balance
+			addrInfo.IsContract = len(code) > 0
+			_ = s.dbClient.UpdateAddresses(ctx, []*types.Address{addrInfo})
+		}
 		result := SimpleAddress{
 			Address:       addrInfo.Address,
 			BalanceString: addrInfo.BalanceString,
@@ -646,18 +661,6 @@ func (s *Server) AddressInfo(c echo.Context) error {
 		if smcAddress[result.Address] != nil {
 			result.IsInValidatorsList = true
 			result.Role = smcAddress[result.Address].Role
-		}
-		currAddrInfo, _ := s.getAddressInfo(ctx, addrInfo.Address)
-		if currAddrInfo != nil {
-			result.Name = currAddrInfo.Name
-		}
-		balance, err := s.kaiClient.GetBalance(ctx, address)
-		if err != nil {
-			return err
-		}
-		if balance != addrInfo.BalanceString {
-			addrInfo.BalanceString = balance
-			_ = s.dbClient.UpdateAddresses(ctx, []*types.Address{addrInfo})
 		}
 		return api.OK.SetData(result).Build(c)
 	}
@@ -785,6 +788,33 @@ func (s *Server) AddressHolders(c echo.Context) error {
 		krcTokenInfo, _ := s.getKRCTokenInfo(ctx, holders[i].ContractAddress)
 		if krcTokenInfo != nil {
 			holders[i].Logo = krcTokenInfo.Logo
+			// get holder balance from RPC for rechecking
+			smcABIStr, err := s.cacheClient.SMCAbi(ctx, cfg.SMCTypePrefix+krcTokenInfo.TokenType)
+			if err != nil {
+				s.logger.Warn("Cannot get KRC20 token ABI", zap.Error(err), zap.String("smcAddress", holders[i].ContractAddress))
+				continue
+			}
+			smcABI, err := s.decodeSMCABIFromBase64(ctx, smcABIStr, holders[i].ContractAddress)
+			if err != nil {
+				s.logger.Warn("Cannot decode KRC20 token ABI", zap.Error(err), zap.String("smcAddress", holders[i].ContractAddress))
+				continue
+			}
+			balance, err := s.kaiClient.GetKRC20BalanceByAddress(ctx, smcABI, common.HexToAddress(holders[i].ContractAddress), common.HexToAddress(holders[i].HolderAddress))
+			if err != nil {
+				s.logger.Warn("Cannot get KRC20 balance of address", zap.Error(err), zap.String("holderAddress", holders[i].HolderAddress),
+					zap.String("smcAddress", holders[i].ContractAddress))
+				continue
+			}
+			s.logger.Info("RPC balance vs db balance", zap.String("RPC", balance.String()), zap.String("DB", holders[i].BalanceString))
+			if !strings.EqualFold(balance.String(), holders[i].BalanceString) {
+				// update correct balance to database and return to client
+				holders[i].BalanceString = balance.String()
+				holders[i].BalanceFloat = s.calculateKRC20BalanceFloat(balance, krcTokenInfo.Decimals)
+				err = s.dbClient.UpdateHolders(ctx, []*types.TokenHolder{holders[i]})
+				if err != nil {
+					s.logger.Warn("Cannot update KRC20 holder with new balance", zap.Error(err), zap.Any("holder", holders[i]))
+				}
+			}
 		}
 	}
 	return api.OK.SetData(PagingResponse{
