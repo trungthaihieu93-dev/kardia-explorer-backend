@@ -9,38 +9,23 @@ import (
 	"github.com/kardiachain/kardia-explorer-backend/kardia"
 )
 
-type Config struct {
-	TrustedNodes []string
-	PublicNodes  []string
-	WSNodes      []string
+func setupTestHandler() (*handler, error) {
+	lgr, err := zap.NewDevelopment()
+	cfg := Config{
+		TrustedNodes: []string{"https://dev-1.kardiachain.io"},
+		PublicNodes:  []string{"https://dev-1.kardiachain.io"},
+		WSNodes:      []string{"wss://ws-dev.kardiachain.io/ws"},
 
-	// DB config
-	StorageAdapter db.Adapter
-	StorageURI     string
-	StorageDB      string
+		StorageAdapter: db.Adapter("mgo"),
+		StorageURI:     "mongodb://10.10.0.252:27017",
+		StorageDB:      "explorerTestDB",
 
-	CacheAdapter cache.Adapter
-	CacheURL     string
-	CacheDB      int
+		CacheAdapter: cache.Adapter("redis"),
+		CacheURL:     "10.10.0.252:6379",
+		CacheDB:      0,
 
-	Logger *zap.Logger
-}
-
-type Handler interface {
-	IContractHandler
-	IStakingHandler
-	ILogs
-}
-
-type handler struct {
-	// Internal
-	w      *kardia.Wrapper
-	db     db.Client
-	cache  cache.Client
-	logger *zap.Logger
-}
-
-func New(cfg Config) (Handler, error) {
+		Logger: lgr,
+	}
 	wrapperCfg := kardia.WrapperConfig{
 		TrustedNodes: cfg.TrustedNodes,
 		PublicNodes:  cfg.PublicNodes,
