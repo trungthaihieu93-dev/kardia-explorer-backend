@@ -27,10 +27,11 @@ type IContract interface {
 
 	UpsertSMCABIByType(ctx context.Context, smcType, abi string) error
 	SMCABIByType(ctx context.Context, smcType string) (string, error)
+
+	UpsertContract(ctx context.Context, c *types.Contract) error
 }
 
 func (m *mongoDB) InsertContract(ctx context.Context, contract *types.Contract, addrInfo *types.Address) error {
-	contract.CreatedAt = time.Now().Unix()
 	if _, err := m.wrapper.C(cContract).Insert(contract); err != nil {
 		return err
 	}
@@ -106,7 +107,6 @@ func (m *mongoDB) Contract(ctx context.Context, contractAddr string) (*types.Con
 }
 
 func (m *mongoDB) UpdateContract(ctx context.Context, contract *types.Contract, addrInfo *types.Address) error {
-	contract.CreatedAt = time.Now().Unix()
 	if _, err := m.wrapper.C(cContract).Upsert(bson.M{"address": contract.Address}, contract); err != nil {
 		return err
 	}
@@ -139,4 +139,12 @@ func (m *mongoDB) SMCABIByType(ctx context.Context, smcType string) (string, err
 		return "", err
 	}
 	return currABI.ABI, nil
+}
+
+func (m *mongoDB) UpsertContract(ctx context.Context, c *types.Contract) error {
+	if _, err := m.wrapper.C(cContract).Insert(c); err != nil {
+		return err
+	}
+
+	return nil
 }

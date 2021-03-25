@@ -31,6 +31,10 @@ var (
 )
 
 const (
+	CreatorAddress = "0x"
+)
+
+const (
 	RoleProposer  = 3
 	RoleValidator = 2
 	RoleCandidate = 1
